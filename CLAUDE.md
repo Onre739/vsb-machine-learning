@@ -1,0 +1,55 @@
+# Projekt: Klasifikace mořských živočichů (předmět Machine Learning)
+
+## Kontext
+- Student, projekt do předmětu ML. AI se smí používat, ale student musí **rozumět každému řádku** — vysvětluj, proč se co dělá, kód dávej po krocích.
+- Komunikace a Markdown komentáře v notebooku **česky**. Zadání vyžaduje: všechny komentáře a interpretace v Markdown buňkách, průběžné vysvětlení rozhodnutí, krátké shrnutí výsledků baseline (včetně overfit checku).
+- Styl notebooku navazuje na cvičení `ML_03_Convolutional_Neural_Networks.ipynb` (emoji nadpisy, krátké „💡“ poznámky).
+- Hardware: lokálně GTX 1080 (Pascal, 8 GB) ⇒ PyTorch z CUDA 12.6 wheelů (poslední je 2.14):
+  `pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu126`
+- Na Windows: `num_workers > 0` v Jupyteru nefunguje s Datasetem definovaným v notebooku ⇒ přesunout `SeaAnimalsDataset` do `dataset.py`.
+
+## Dataset
+Kaggle `vencerlanz09/sea-animals-image-dataste` (stahuje se přes `kagglehub`), složka = třída.
+
+## Zadání — Milestone 1 (týdny 6–7): Data Pipeline & Baseline Model, čistý PyTorch
+**Cíl:** funkční end-to-end tréninková pipeline v čistém PyTorch **bez chyb**.
+**Odevzdání:** plně spustitelný Jupyter notebook (nebo čistý Python kód), **ověřuje se na konzultaci ve cvičení** ⇒ musí projít „Run All“ bez zásahu a student ho musí umět vysvětlit.
+
+1. **Dataset & DataLoader:** subclass `torch.utils.data.Dataset` s vlastním `__len__` a `__getitem__`; `DataLoader` s batchováním, shuffle a správou workerů (`num_workers`); vizualizace alespoň jednoho batche po transformaci se správnými tvary tenzorů.
+2. **Baseline architektura:** vlastní `torch.nn.Module` od nuly (např. jednoduchá 2–3vrstvá CNN), **bez předtrénovaných vah** — cílem je pochopit neasistovaný výkon modelu; rozměry vstupu/výstupu odpovídají datům a úloze.
+3. **Explicitní train/val smyčka:** ruční `optimizer.zero_grad()`, `loss.backward()`, `optimizer.step()`; oddělená validace s `model.eval()` + `torch.no_grad()`; ruční akumulace metrik přes batche.
+4. **Overfit sanity check:** malý výsek dat (8–16 vzorků) přeučit na loss ≈ 0 a ~100 % accuracy, doložit křivkou loss nebo výpisem. Ve shrnutí výslovně uvést, co tím prokazujeme: **gradienty tečou správně, labely odpovídají predikcím, pipeline nemá tiché broadcasting bugy**.
+
+**Dokumentace (DŮLEŽITÉ):** vždy popsat, *co* se udělalo a *proč*; všechny komentáře a interpretace v Markdown buňkách. Povinně: průběžné komentáře ke krokům a rozhodnutím + krátké shrnutí výsledků baseline (včetně overfit checku).
+
+## Zadání — Milestone 2 (týdny 11–12): Advanced Architecture, Optimization & Defense
+**Cíl:** zlepšit výkon moderní architekturou, regularizací a pokročilým tréninkem; **zdůvodnit úpravy a vyhodnotit přínos**.
+**Odevzdání:** kompletní **repozitář s kódem**, **reprodukovatelné logy tréninku** (konfigurace každého experimentu), **prezentace**.
+
+1. **Architektura** (min. jedna): A = transfer learning (zmrazený backbone → postupné odmrazování → odlišné lr pro části sítě), B = vlastní pokročilá architektura (residual, bottleneck…).
+2. **Dynamická augmentace** (Mixup, CutMix, Random Erasing…) + **regularizace** (weight decay, dropout, DropPath, BatchNorm/LayerNorm).
+3. **Plánovač lr** (cosine, OneCycle, warmup); gradient clipping jen u RNN (nás se netýká); **sledování experimentů** + křivky train vs. val s interpretací; **uložená konfigurace každého experimentu**.
+4. Lightning / HF Trainer — volitelné (**nepoužíváme**).
+5. **Analýza chyb:** top-5 vzorků s nejvyšší loss a/nebo confusion matrix, predikce vs. skutečnost, vysvětlení příčin.
+6. **Dokumentace:** vše v Markdownu, vysvětlení kroků a rozhodnutí, **finální shrnutí** (co nejefektivnější, co nejproblematičtější, zajímavé poznatky).
+
+**Rozhodnutí M2 (2026-11-20):** varianta **A, ResNet-50 z torchvision** — navazuje na cvičení `vsb-machine-learning/ML_04_TransferLearning_PyTorch.ipynb` (weights.transforms(), freeze přes requires_grad, výměna `model.fc`, `bn_frozen`, odmrazení `layer4`, discriminative LR přes parameter groups, `count_params`). Logování **Matplotlib + CSV/JSON** (`runs/<exp>/config.json`, `log.csv`, váhy mimo git). Struktura **notebook `ML_GEM0023_milestone_02.ipynb` + moduly `src/`**, git + README + requirements. **Bez Lightningu.** Plán experimentů: E0 = M1 výsledky, E1 = jen hlava, E2 = + postupné odmrazování + discriminative LR + warmup/cosine, E3 = + CutMix/Mixup + Random Erasing + label smoothing. Notebook trénuje jen pokud `runs/<exp>` chybí (jinak načte). Stejný split jako M1 (uložit do `splits/`). ImageNet normalizace, 224 px. Test jen jednou na konci. M1 notebook se nemění.
+
+## Stav Milestone 1 (notebook `ML_GEM0023_milestone_01.ipynb` — student ho přejmenoval z sea_animals_milestone1.ipynb)
+- **Část 0 — EDA: hotovo a spuštěno.** 13 711 obrázků, 23 tříd. Největší Turtle_Tortoise (1 903), nejmenší Seal (414), poměr 4,6×; majority baseline 13,9 %. Průměrná velikost ~293×222 px, 3 barevné módy, 0 poškozených souborů, 75 nadbytečných duplikátů odstraněno, 42 skupin duplikátů s konfliktním labelem vyřazeno. Výsledek: DataFrame `clean` + `sea_animals_index.csv`, mapování `class_to_idx` (abecedně).
+- **Část 1 — Dataset & DataLoader: hotovo, spuštěno lokálně, shrnutí doplněno.** Po čištění 13 594 obrázků ⇒ split 70/15/15 (SEED=42): 9 515 / 2 039 / 2 040. `SeaAnimalsDataset` se zapisuje přes `%%writefile dataset.py` a importuje (kvůli Windows spawn). mean (0,321; 0,405; 0,417), std (0,261; 0,238; 0,258). `train_tf` (Resize 128×128, HorizontalFlip, ToTensor, Normalize) / `eval_tf`. DataLoadery batch 64, `num_workers=4`, `pin_memory`, `persistent_workers` (start workerů ~11 s, 4 workery ~1,9× rychlejší než 0).
+- **Dataset je ve složce projektu `data/sea_animals/`** (přesunuto z kagglehub cache). Notebook stahuje jen pokud složka chybí (`output_dir`), cesty v CSV jsou relativní (`data/sea_animals/...`).
+- Notebook je upravený pro lokální běh (`.venv` kernel, `%pip`, poznámka o Avast SSL ⇒ `pip-system-certs`).
+- **Část 2 — Baseline CNN: hotovo a spuštěno.** `BaselineCNN` (v notebooku, ne v .py — model do workerů nejde): `features` = 3× Conv3×3(pad 1)-ReLU-MaxPool2 (3→16→32→64), `classifier` = Flatten + Linear(16384→23), logity bez softmaxu. 400 439 parametrů (94 % v Linear). `torch.manual_seed(SEED)` před vytvořením, proměnná `model` na `device`. Kontrola tvarů vrstvu po vrstvě na batchi `images` z Části 1; loss při náhodných vahách 3,138 vs. ln 23 = 3,135.
+- **Část 3 — Train/val smyčka: hotovo a spuštěno, shrnutí doplněno.** `train_one_epoch` / `evaluate` (ruční akumulace vážená velikostí batche), CrossEntropyLoss, Adam lr 1e-3, 15 epoch (~6 s/epocha, celkem ~2 min). Nejlepší val acc 42,9 % (ep. 10), konec 41,1 %; train 91,1 %. Jasný overfitting: val loss min 1,95 v ep. 5, pak roste na 3,39. Macro acc 37,4 %; nejhorší Squid 7 %, Fish 9 %, Clams 16 %; nejlepší Crabs 80 %, Otter 72 %, Turtle 66 %. Proměnné: `history`, `criterion`, `optimizer`, `train_one_epoch`, `evaluate`.
+- **Determinismus:** buňka s importy nastavuje `torch.backends.cudnn.deterministic = True`, `benchmark = False` ⇒ dva běhy „Run All“ dávají identická čísla (ověřeno). Bez toho se výsledky Části 3 lišily o ~±1 % a shrnutí přestávala sedět. Při změně čísel ve shrnutích vždy vycházet z aktuálního výstupu.
+- **Část 4 — Overfit check: hotovo a spuštěno, shrnutí doplněno.** 16 náhodných train obrázků (11 tříd), `eval_tf`, `num_workers=0`, jeden batch, čerstvý `overfit_model`, stejné `train_one_epoch`/`evaluate`, 50 epoch + měření v epoše 0. Loss 3,1 → 1,4e-3 (ep. 10) → 1,5e-8 (ep. 50, limit float32), 100 % od 4. epochy. Tabulka predikce vs. složka + asserty. Shrnutí uvádí 3 prokázané body ze zadání.
+- **Část 5 — Vylepšený model: hotovo a spuštěno, shrnutí doplněno.** Student zvolil 1 vylepšený model (ne postupné experimenty), bez transfer learningu; dlouhý „Run All“ nevadí (na obhajobě se nespouští, ukazují se hotové výpisy). `train_tf_aug` (RandomResizedCrop 0.6–1, flip, ColorJitter 0.2 bez hue), `train_loader_aug`; `ImprovedCNN` = 4× conv_block (2× Conv-BN-ReLU + MaxPool, 32→256), GAP → Dropout 0.3 → Linear(256→23), 1,18 mil. param.; AdamW lr 1e-3 wd 0.01, CosineAnnealingLR, 30 epoch (~14 s/epocha, 7,2 min), nejlepší epocha přes deepcopy state_dict; váhy tříd v train loss (`criterion_w`), val s nevážnou `criterion`. Výsledek: val acc **55,1 %** (ep. 30 — stále roste, nepřeučuje se), macro 52,4 % (baseline 41,1 / 37,4). Turtle tipován 1,14× → 0,80×, Seal 0,61× → 1,19×, Seal acc 37 → 61 %. Proměnné: `model2`, `history2`, `best_epoch2`, `imp_preds`, `base_preds`.
+- **Část 6 — Test + celkové shrnutí: hotovo a spuštěno.** `predict`, `macro_acc`; test jednou pro oba modely. Baseline (ep. 15): test acc 39,5 %, macro 35,9 %, loss 3,26. Vylepšený (nejlepší ep.): test acc **56,6 %**, macro 54,1 %, loss 1,43 (+17,1 / +18,2 p. b.). Shrnutí obsahuje tabulku výsledků, checklist splnění zadání, hlavní zjištění a další kroky.
+- **Milestone 1 kompletní.** Notebook 95 buněk, „Run All“ ~11 min bez chyb, deterministický (čísla ověřena opakovaným během).
+- **Možné doplňky (nabídnuto, neodsouhlaseno):** prodloužit trénink vylepšeného modelu na ~60 epoch; buňka „Proč tyto parametry“ u BaselineCNN; confusion matrix.
+
+## Stav Milestone 2
+- **Technické ověření (2026-11-20):** váhy `ResNet50_Weights.IMAGENET1K_V2` se stáhnou přes Avast bez problému (cache `~/.cache/torch/hub/checkpoints`). Rychlost GTX 1080 při 224 px: jen hlava 381 obr/s (2,7 GB), layer4+hlava 288 obr/s (5,3 GB), celá síť 112 obr/s (6,3 GB ⇒ pro plný fine-tuning batch 32). Načítání dat 965/1 143 obr/s (4/6 workerů) ⇒ úzké hrdlo je GPU. AMP nepoužívat (Pascal bez tensor cores, fp16 pomalé). Start 4 workerů ~25 s.
+- **Hotovo:** `src/data.py` (IMAGENET_MEAN/STD, `make_splits` → `splits/{train,val,test}.csv` = identický split jako M1 ověřeno, `SeaAnimalsDataset`, `build_transforms(img_size, random_erasing)` — eval = Resize 232 + CenterCrop 224, `make_loaders`), `src/__init__.py`, `.gitignore` (data/, .venv/, *.pt, notebooky ze cvičení `ML_0*_*.ipynb`), `requirements.txt`, `git init -b main` (zatím **bez commitu** — čeká na souhlas studenta).
+- **Další kroky:** `src/models.py` (ResNet-50 + hlava, freeze/unfreeze po blocích, count_params, param groups) ⇒ `src/train.py` (train_one_epoch s CutMix/Mixup, evaluate, fit s warmup+cosine, logy runs/<exp>/) ⇒ notebook `ML_GEM0023_milestone_02.ipynb` (E1–E3) ⇒ analýza chyb ⇒ shrnutí ⇒ README ⇒ prezentace.

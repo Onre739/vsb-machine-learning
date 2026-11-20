@@ -1,0 +1,15 @@
+# prostředí a cache
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.vscode/
+
+# data (stahuje se přes kagglehub do data/sea_animals/, ~337 MB)
+data/
+
+# natrénované váhy — velké soubory; logy a konfigurace (runs/*/config.json, log.csv) v gitu zůstávají
+*.pt
+*.pth
+
+# materiály ze cvičení (nejsou součástí projektu)
+ML_0*_*.ipynb
