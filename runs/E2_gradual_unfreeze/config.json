@@ -1,0 +1,41 @@
+{
+  "name": "E2_gradual_unfreeze",
+  "seed": 42,
+  "img_size": 224,
+  "batch_size": 32,
+  "num_workers": 4,
+  "epochs": 15,
+  "warmup_epochs": 1,
+  "unfreeze_schedule": {
+    "1": [],
+    "4": [
+      "layer4"
+    ],
+    "7": [
+      "layer3",
+      "layer4"
+    ],
+    "10": [
+      "stem",
+      "layer1",
+      "layer2",
+      "layer3",
+      "layer4"
+    ]
+  },
+  "lrs": {
+    "stem": 1e-05,
+    "layer1": 1e-05,
+    "layer2": 1e-05,
+    "layer3": 3e-05,
+    "layer4": 0.0001,
+    "fc": 0.001
+  },
+  "weight_decay": 0.01,
+  "dropout": 0.2,
+  "label_smoothing": 0.0,
+  "mixup_alpha": 0.0,
+  "cutmix_alpha": 0.0,
+  "mix_prob": 0.0,
+  "random_erasing": 0.0
+}

@@ -1,0 +1,22 @@
+{
+  "name": "E1_head_only",
+  "seed": 42,
+  "img_size": 224,
+  "batch_size": 32,
+  "num_workers": 4,
+  "epochs": 8,
+  "warmup_epochs": 1,
+  "unfreeze_schedule": {
+    "1": []
+  },
+  "lrs": {
+    "fc": 0.001
+  },
+  "weight_decay": 0.01,
+  "dropout": 0.2,
+  "label_smoothing": 0.0,
+  "mixup_alpha": 0.0,
+  "cutmix_alpha": 0.0,
+  "mix_prob": 0.0,
+  "random_erasing": 0.0
+}
