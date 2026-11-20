@@ -27,13 +27,19 @@ ve skutečnosti **chybné labely v datasetu**. Podrobnosti jsou v notebooku Mile
 | `ML_GEM0023_milestone_01.ipynb` | **Milestone 1:** EDA, vlastní `Dataset` a `DataLoader`, baseline CNN, ruční train/val smyčka, overfit sanity check, vylepšená CNN |
 | `ML_GEM0023_milestone_02.ipynb` | **Milestone 2:** transfer learning (ResNet-50), experimenty E1–E3, srovnání, analýza chyb (confusion matrix, nejhorší vzorky, Grad-CAM), vyhodnocení na testu, shrnutí |
 | `src/data.py` | split dat, `SeaAnimalsDataset`, transformace (224 px, ImageNet normalizace), DataLoadery |
+| `src/augment.py` | CutMix / Mixup |
 | `src/models.py` | ResNet-50 s novou hlavou, zmrazování / odmrazování bloků, skupiny parametrů s různým lr |
-| `src/train.py` | CutMix / Mixup, warmup + cosine plánovač, tréninková smyčka, `fit()` s logováním experimentů |
+| `src/train.py` | warmup + cosine plánovač, tréninková smyčka, `fit()` s logováním experimentů |
 | `src/analysis.py` | predikce pro celou sadu, Grad-CAM |
 | `runs/<experiment>/` | `config.json` (kompletní nastavení experimentu) a `log.csv` (metriky po epochách) |
 | `splits/` | pevný stratifikovaný split train / val / test (70 / 15 / 15, seed 42) |
 | `sea_animals_index.csv` | index obrázků po vyčištění (bez poškozených souborů a duplikátů) |
 | `dataset.py` | `Dataset` pro Milestone 1 (notebook ho vytváří sám přes `%%writefile`) |
+
+Moduly v `src/` jsou **celé zapsané i v notebooku Milestone 2** — v buňkách `%%writefile`, které je při spuštění
+uloží do souborů. Notebook je tak samostatný a kód je v něm vidět u vysvětlení, ke kterému patří. Soubory jsou
+potřeba kvůli Windows: workery `DataLoader`u si `Dataset` musí naimportovat, třídu definovanou jen v buňce
+notebooku neumí.
 
 ## ⚙️ Instalace
 
